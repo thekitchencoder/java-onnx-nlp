@@ -1,0 +1,56 @@
+{
+  "groups": [
+    {
+      "name": "nlp.onnx",
+      "type": "uk.codery.onnx.nlp.spring.NlpOnnxProperties",
+      "description": "Configuration properties for NLP ONNX classifier."
+    }
+  ],
+  "properties": [
+    {
+      "name": "nlp.onnx.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Whether to enable NLP ONNX autoconfiguration.",
+      "defaultValue": true
+    },
+    {
+      "name": "nlp.onnx.model-path",
+      "type": "java.lang.String",
+      "description": "Path to the model directory containing model.onnx and config.json."
+    },
+    {
+      "name": "nlp.onnx.vocabulary-path",
+      "type": "java.lang.String",
+      "description": "Optional path to custom vocabulary file."
+    },
+    {
+      "name": "nlp.onnx.warmup",
+      "type": "java.lang.Boolean",
+      "description": "Whether to perform model warmup on startup.",
+      "defaultValue": false
+    },
+    {
+      "name": "nlp.onnx.warmup-texts",
+      "type": "java.util.List<java.lang.String>",
+      "description": "Sample texts to use for model warmup."
+    },
+    {
+      "name": "nlp.onnx.preprocessing.lowercase",
+      "type": "java.lang.Boolean",
+      "description": "Whether to lowercase text during preprocessing.",
+      "defaultValue": true
+    },
+    {
+      "name": "nlp.onnx.preprocessing.remove-urls",
+      "type": "java.lang.Boolean",
+      "description": "Whether to remove URLs during preprocessing.",
+      "defaultValue": false
+    },
+    {
+      "name": "nlp.onnx.preprocessing.normalize-whitespace",
+      "type": "java.lang.Boolean",
+      "description": "Whether to normalize whitespace during preprocessing.",
+      "defaultValue": true
+    }
+  ]
+}

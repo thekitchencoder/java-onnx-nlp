@@ -1,0 +1,36 @@
+# Example Spring Boot configuration for NLP ONNX Classifier
+
+nlp:
+  onnx:
+    # Enable/disable the autoconfiguration
+    enabled: true
+
+    # Path to your model directory
+    model-path: /path/to/your/model
+
+    # Optional: custom vocabulary file
+    # vocabulary-path: /path/to/vocabulary.json
+
+    # Warmup configuration
+    warmup: true
+    warmup-texts:
+      - "This is a positive example"
+      - "This is a negative example"
+      - "This is a neutral example"
+
+    # Text preprocessing settings
+    preprocessing:
+      lowercase: true
+      remove-urls: true
+      remove-emails: false
+      remove-mentions: true
+      remove-hashtags: false
+      normalize-whitespace: true
+      unicode-normalization: true
+      trim: true
+
+# Logging
+logging:
+  level:
+    uk.codery.onnx.nlp: DEBUG
+    ai.onnxruntime: INFO

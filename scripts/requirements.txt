@@ -1,0 +1,22 @@
+# Requirements for the standalone ONNX training script (scripts/onnx_train.py)
+# Install with:
+#   python -m pip install --upgrade pip
+#   pip install -r scripts/requirements.txt
+#
+# Notes:
+# - onnxruntime is optional for training but REQUIRED for evaluation (onnx_eval.py).
+# - These pins are conservative and tested on Python 3.12.
+# - If you encounter build issues, upgrade pip and try again.
+
+pandas>=1.5,<3.0
+numpy>=1.23,<3.0
+scikit-learn>=1.2,<2.0
+scipy>=1.9,<2.0
+# Transitive/runtime deps for ONNX export stack
+packaging>=23,<25
+protobuf>=4.23,<6
+onnx>=1.14,<1.17
+onnxconverter-common>=1.13.1,<2.0
+skl2onnx>=1.16,<2.0
+# Optional runtime for executing ONNX models locally
+onnxruntime>=1.16,<2.0

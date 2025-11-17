@@ -1,0 +1,23 @@
+{
+  "modelName": "example-sentiment-classifier",
+  "version": "1.0.0",
+  "classLabels": ["negative", "neutral", "positive"],
+  "inputTensorName": "input",
+  "outputTensorName": "output",
+  "maxSequenceLength": 128,
+  "vocabulary": {
+    "[PAD]": 0,
+    "[UNK]": 1,
+    "the": 2,
+    "a": 3,
+    "is": 4,
+    "good": 5,
+    "bad": 6,
+    "great": 7,
+    "terrible": 8
+  },
+  "metadata": {
+    "description": "Example sentiment classification model",
+    "training_date": "2024-01-15"
+  }
+}

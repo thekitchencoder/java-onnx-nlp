@@ -1,0 +1,6 @@
+{
+  "calibrationType": "temperature",
+  "parameters": {
+    "temperature": 1.5
+  }
+}
