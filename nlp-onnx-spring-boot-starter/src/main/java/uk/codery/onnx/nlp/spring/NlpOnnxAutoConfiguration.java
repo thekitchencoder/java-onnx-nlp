@@ -27,16 +27,9 @@ import java.nio.file.Paths;
 import java.util.Map;
 
 /**
- * Spring Boot autoconfiguration for NLP ONNX classifier.
+ * Spring Boot autoconfiguration for NLP ONNX classifiers.
  *
- * Supports both single model (legacy) and multiple named models configuration.
- *
- * <p>Single model configuration (deprecated):
- * <pre>
- * nlp.onnx.model-path=/path/to/model
- * </pre>
- *
- * <p>Multiple models configuration:
+ * <p>Configuration example:
  * <pre>
  * nlp.onnx.models.address.model-path=/path/to/address/model
  * nlp.onnx.models.voda.model-path=/path/to/voda/model
@@ -67,48 +60,6 @@ public class NlpOnnxAutoConfiguration {
     @ConditionalOnMissingBean
     public ModelLoader modelLoader() {
         return new FileSystemModelLoader();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public TextPreprocessor textPreprocessor(NlpOnnxProperties properties) {
-        NlpOnnxProperties.PreprocessingConfig config = properties.getPreprocessing();
-        return createPreprocessor(config);
-    }
-
-    /**
-     * Legacy single model configuration.
-     * Only created if model-path is specified and no models map is configured.
-     */
-    @Bean(destroyMethod = "close")
-    @ConditionalOnMissingBean
-    @ConditionalOnProperty(prefix = "nlp.onnx", name = "model-path")
-    public TextClassifier textClassifier(
-            NlpOnnxProperties properties,
-            OrtEnvironment environment,
-            ModelLoader modelLoader,
-            TextPreprocessor preprocessor
-    ) throws IOException, OrtException {
-        log.info("Creating TextClassifier from model path: {}", properties.getModelPath());
-
-        TextClassifierBuilder builder = TextClassifierBuilder.newBuilder()
-                .modelLoader(modelLoader)
-                .modelPath(Paths.get(properties.getModelPath()))
-                .preprocessor(preprocessor)
-                .environment(environment);
-
-        if (properties.getVocabularyPath() != null) {
-            log.warn("Custom vocabulary loading not yet implemented");
-        }
-
-        TextClassifier classifier = builder.build();
-
-        if (properties.isWarmup() && !properties.getWarmupTexts().isEmpty()) {
-            log.info("Warming up classifier with {} sample texts", properties.getWarmupTexts().size());
-            classifier.warmup(properties.getWarmupTexts());
-        }
-
-        return classifier;
     }
 
     /**
@@ -157,6 +108,7 @@ public class NlpOnnxAutoConfiguration {
                     .orElse(new NlpOnnxProperties());
 
             if (properties.getModels().isEmpty()) {
+                log.warn("No models configured under nlp.onnx.models");
                 return;
             }
 

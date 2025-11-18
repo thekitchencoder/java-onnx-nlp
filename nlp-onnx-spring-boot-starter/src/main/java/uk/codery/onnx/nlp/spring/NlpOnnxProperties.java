@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Configuration properties for NLP ONNX classifier.
+ * Configuration properties for NLP ONNX classifiers.
  */
 @Data
 @ConfigurationProperties(prefix = "nlp.onnx")
@@ -19,41 +19,6 @@ public class NlpOnnxProperties {
      * Whether to enable the NLP ONNX autoconfiguration.
      */
     private boolean enabled = true;
-
-    /**
-     * Path to the model directory (for single model configuration).
-     * @deprecated Use {@link #models} for multi-model support.
-     */
-    @Deprecated
-    private String modelPath;
-
-    /**
-     * Path to custom vocabulary file (optional, for single model configuration).
-     * @deprecated Use {@link #models} for multi-model support.
-     */
-    @Deprecated
-    private String vocabularyPath;
-
-    /**
-     * Whether to perform model warmup on startup (for single model configuration).
-     * @deprecated Use {@link #models} for multi-model support.
-     */
-    @Deprecated
-    private boolean warmup = false;
-
-    /**
-     * Sample texts to use for warmup (for single model configuration).
-     * @deprecated Use {@link #models} for multi-model support.
-     */
-    @Deprecated
-    private List<String> warmupTexts = new ArrayList<>();
-
-    /**
-     * Text preprocessing configuration (for single model configuration).
-     * @deprecated Use {@link #models} for multi-model support.
-     */
-    @Deprecated
-    private PreprocessingConfig preprocessing = new PreprocessingConfig();
 
     /**
      * Multiple model configurations keyed by bean name.
