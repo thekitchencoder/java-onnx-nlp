@@ -53,8 +53,8 @@ htmlcov/
 .dmypy.json
 dmypy.json
 
-# ONNX Models - keep test models in repo (small ~250K each)
-# scripts/models/* is now tracked for reproducible CI builds
+# ONNX Models - models in test/resources are synced with repo (small ~250K each)
+scripts/models/*
 
 # Training Data
 # Note: scripts/example/* contains synthetic data (safe to commit)

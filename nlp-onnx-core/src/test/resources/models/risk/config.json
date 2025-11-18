@@ -1,0 +1,21 @@
+{
+  "modelName": "risk",
+  "version": "1.0.0",
+  "classLabels": [
+    "no_risk",
+    "has_risk"
+  ],
+  "inputTensorName": "text",
+  "outputTensorName": "probabilities",
+  "maxSequenceLength": 512,
+  "vocabulary": null,
+  "metadata": {
+    "ngram_range": [
+      1,
+      2
+    ],
+    "min_df": 1,
+    "zipmap": false,
+    "feature": "tfidf_word"
+  }
+}

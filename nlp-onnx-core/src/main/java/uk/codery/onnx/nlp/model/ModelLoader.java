@@ -9,6 +9,8 @@ import java.nio.file.Path;
  * Abstraction for loading ONNX models and associated metadata.
  * Implementations can load from filesystem, classpath, remote storage, etc.
  */
+// TODO - should be functional interface with `ModelBundle load() throws IOException` method
+//        The ModelLoader should be initialized with the Path or Resource depending on its type
 public interface ModelLoader {
 
     /**
