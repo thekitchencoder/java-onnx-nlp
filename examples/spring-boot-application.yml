@@ -1,33 +1,44 @@
-# Example Spring Boot configuration for NLP ONNX Classifier
+# Example Spring Boot configuration for NLP ONNX Classifiers
 
 nlp:
   onnx:
     # Enable/disable the autoconfiguration
     enabled: true
 
-    # Path to your model directory
-    model-path: /path/to/your/model
+    # Multiple model configurations
+    models:
+      # Address detection classifier
+      address:
+        model-path: /path/to/models/address
+        warmup: true
+        warmup-texts:
+          - "123 Main Street, London"
+          - "No address here"
+        preprocessing:
+          lowercase: true
+          remove-urls: true
+          normalize-whitespace: true
 
-    # Optional: custom vocabulary file
-    # vocabulary-path: /path/to/vocabulary.json
+      # Sentiment analysis classifier
+      sentiment:
+        model-path: /path/to/models/sentiment
+        warmup: true
+        warmup-texts:
+          - "This is great!"
+          - "This is terrible"
+        preprocessing:
+          lowercase: true
+          remove-mentions: true
+          remove-hashtags: true
 
-    # Warmup configuration
-    warmup: true
-    warmup-texts:
-      - "This is a positive example"
-      - "This is a negative example"
-      - "This is a neutral example"
-
-    # Text preprocessing settings
-    preprocessing:
-      lowercase: true
-      remove-urls: true
-      remove-emails: false
-      remove-mentions: true
-      remove-hashtags: false
-      normalize-whitespace: true
-      unicode-normalization: true
-      trim: true
+      # Risk detection classifier
+      risk:
+        model-path: /path/to/models/risk
+        warmup: false
+        preprocessing:
+          lowercase: true
+          normalize-whitespace: true
+          trim: true
 
 # Logging
 logging:

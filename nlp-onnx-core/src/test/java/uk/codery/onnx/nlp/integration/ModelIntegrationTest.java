@@ -16,13 +16,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
 /**
- * Integration tests for ONNX NLP classifiers using real models from the scripts folder.
+ * Integration tests for ONNX NLP classifiers using test models from the resources folder.
  * These tests verify that models can be loaded and produce reasonable predictions.
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ModelIntegrationTest {
 
-    private static final String SCRIPTS_DIR = "scripts/models";
+    private static final String MODEL_DIRECTORY_PATH = "src/test/resources/models";
 
     private OrtEnvironment ortEnvironment;
     private TextClassifier addressClassifier;
@@ -200,7 +200,7 @@ System.out.println(result);
     }
 
     private TextClassifier loadClassifier(String modelName) throws Exception {
-        Path modelPath = projectRoot.resolve(SCRIPTS_DIR).resolve(modelName);
+        Path modelPath = projectRoot.resolve(MODEL_DIRECTORY_PATH).resolve(modelName);
 
         return TextClassifierBuilder.newBuilder()
                 .modelLoader(new FileSystemModelLoader())
@@ -211,16 +211,17 @@ System.out.println(result);
 
     private Path findProjectRoot() {
         Path current = Paths.get("").toAbsolutePath();
+        System.out.println(current);
 
         // Try current directory first
-        if (Files.exists(current.resolve(SCRIPTS_DIR))) {
+        if (Files.exists(current.resolve(MODEL_DIRECTORY_PATH))) {
             return current;
         }
 
         // Try parent directories (up to 3 levels)
         Path parent = current.getParent();
         for (int i = 0; i < 3 && parent != null; i++) {
-            if (Files.exists(parent.resolve(SCRIPTS_DIR))) {
+            if (Files.exists(parent.resolve(MODEL_DIRECTORY_PATH))) {
                 return parent;
             }
             parent = parent.getParent();

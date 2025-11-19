@@ -15,6 +15,7 @@ public class ModelBundle {
     /**
      * The raw ONNX model bytes.
      */
+    // TODO this should be a supplier
     @NonNull
     byte[] modelBytes;
 

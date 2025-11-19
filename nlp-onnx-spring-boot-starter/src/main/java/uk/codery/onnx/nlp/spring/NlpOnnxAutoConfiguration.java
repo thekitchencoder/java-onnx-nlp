@@ -3,25 +3,45 @@ package uk.codery.onnx.nlp.spring;
 import ai.onnxruntime.OrtEnvironment;
 import ai.onnxruntime.OrtException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.context.EnvironmentAware;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.Environment;
 import uk.codery.onnx.nlp.api.TextClassifier;
 import uk.codery.onnx.nlp.api.TextPreprocessor;
 import uk.codery.onnx.nlp.TextClassifierBuilder;
 import uk.codery.onnx.nlp.model.FileSystemModelLoader;
 import uk.codery.onnx.nlp.model.ModelLoader;
 import uk.codery.onnx.nlp.preprocessing.BasicTextPreprocessor;
-import uk.codery.onnx.nlp.tokenization.SimpleWhitespaceTokenizer;
-import uk.codery.onnx.nlp.tokenization.Tokenizer;
 
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.Map;
 
 /**
- * Spring Boot autoconfiguration for NLP ONNX classifier.
+ * Spring Boot autoconfiguration for NLP ONNX classifiers.
+ *
+ * <p>Configuration example:
+ * <pre>
+ * nlp.onnx.models.address.model-path=/path/to/address/model
+ * nlp.onnx.models.voda.model-path=/path/to/voda/model
+ * nlp.onnx.models.risk.model-path=/path/to/risk/model
+ * </pre>
+ *
+ * <p>Inject by name using {@code @Qualifier}:
+ * <pre>
+ * {@literal @}Autowired
+ * {@literal @}Qualifier("addressClassifier")
+ * private TextClassifier addressClassifier;
+ * </pre>
  */
 @AutoConfiguration
 @EnableConfigurationProperties(NlpOnnxProperties.class)
@@ -42,11 +62,15 @@ public class NlpOnnxAutoConfiguration {
         return new FileSystemModelLoader();
     }
 
+    /**
+     * Registers multiple TextClassifier beans from the models configuration.
+     */
     @Bean
-    @ConditionalOnMissingBean
-    public TextPreprocessor textPreprocessor(NlpOnnxProperties properties) {
-        NlpOnnxProperties.PreprocessingConfig config = properties.getPreprocessing();
+    public static MultiModelBeanRegistrar multiModelBeanRegistrar() {
+        return new MultiModelBeanRegistrar();
+    }
 
+    static TextPreprocessor createPreprocessor(NlpOnnxProperties.PreprocessingConfig config) {
         return BasicTextPreprocessor.builder()
                 .lowercase(config.isLowercase())
                 .removeUrls(config.isRemoveUrls())
@@ -59,38 +83,84 @@ public class NlpOnnxAutoConfiguration {
                 .build();
     }
 
-    @Bean(destroyMethod = "close")
-    @ConditionalOnMissingBean
-    @ConditionalOnProperty(prefix = "nlp.onnx", name = "model-path")
-    public TextClassifier textClassifier(
-            NlpOnnxProperties properties,
-            OrtEnvironment environment,
-            ModelLoader modelLoader,
-            TextPreprocessor preprocessor
-    ) throws IOException, OrtException {
-        log.info("Creating TextClassifier from model path: {}", properties.getModelPath());
+    /**
+     * Post-processor that registers TextClassifier beans for each model in the models map.
+     */
+    @Slf4j
+    static class MultiModelBeanRegistrar implements BeanDefinitionRegistryPostProcessor, EnvironmentAware {
 
-        TextClassifierBuilder builder = TextClassifierBuilder.newBuilder()
-                .modelLoader(modelLoader)
-                .modelPath(Paths.get(properties.getModelPath()))
-                .preprocessor(preprocessor)
-                .environment(environment);
+        private Environment environment;
 
-        // Add custom tokenizer if vocabulary is provided
-        if (properties.getVocabularyPath() != null) {
-            // Load vocabulary and create tokenizer
-            // For now, this is left for custom implementation
-            log.warn("Custom vocabulary loading not yet implemented");
+        @Override
+        public void setEnvironment(Environment environment) {
+            this.environment = environment;
         }
 
-        TextClassifier classifier = builder.build();
-
-        // Warmup if configured
-        if (properties.isWarmup() && !properties.getWarmupTexts().isEmpty()) {
-            log.info("Warming up classifier with {} sample texts", properties.getWarmupTexts().size());
-            classifier.warmup(properties.getWarmupTexts());
+        @Override
+        public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
+            // Bean definitions are registered in postProcessBeanFactory
         }
 
-        return classifier;
+        @Override
+        public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+            NlpOnnxProperties properties = Binder.get(environment)
+                    .bind("nlp.onnx", NlpOnnxProperties.class)
+                    .orElse(new NlpOnnxProperties());
+
+            if (properties.getModels().isEmpty()) {
+                log.warn("No models configured under nlp.onnx.models");
+                return;
+            }
+
+            OrtEnvironment ortEnvironment = beanFactory.getBean(OrtEnvironment.class);
+            ModelLoader modelLoader = beanFactory.getBean(ModelLoader.class);
+
+            for (Map.Entry<String, NlpOnnxProperties.ModelConfig> entry : properties.getModels().entrySet()) {
+                String name = entry.getKey();
+                NlpOnnxProperties.ModelConfig modelConfig = entry.getValue();
+
+                if (modelConfig.getModelPath() == null) {
+                    log.warn("Model '{}' has no model-path configured, skipping", name);
+                    continue;
+                }
+
+                try {
+                    TextClassifier classifier = createClassifier(name, modelConfig, ortEnvironment, modelLoader);
+                    String beanName = name + "Classifier";
+                    beanFactory.registerSingleton(beanName, classifier);
+                    log.info("Registered TextClassifier bean '{}' for model at: {}", beanName, modelConfig.getModelPath());
+                } catch (Exception e) {
+                    throw new RuntimeException("Failed to create classifier for model: " + name, e);
+                }
+            }
+        }
+
+        private TextClassifier createClassifier(
+                String name,
+                NlpOnnxProperties.ModelConfig modelConfig,
+                OrtEnvironment environment,
+                ModelLoader modelLoader
+        ) throws IOException, OrtException {
+            TextPreprocessor preprocessor = createPreprocessor(modelConfig.getPreprocessing());
+
+            TextClassifierBuilder builder = TextClassifierBuilder.newBuilder()
+                    .modelLoader(modelLoader)
+                    .modelPath(Paths.get(modelConfig.getModelPath()))
+                    .preprocessor(preprocessor)
+                    .environment(environment);
+
+            if (modelConfig.getVocabularyPath() != null) {
+                log.warn("Custom vocabulary loading not yet implemented for model: {}", name);
+            }
+
+            TextClassifier classifier = builder.build();
+
+            if (modelConfig.isWarmup() && !modelConfig.getWarmupTexts().isEmpty()) {
+                log.info("Warming up classifier '{}' with {} sample texts", name, modelConfig.getWarmupTexts().size());
+                classifier.warmup(modelConfig.getWarmupTexts());
+            }
+
+            return classifier;
+        }
     }
 }

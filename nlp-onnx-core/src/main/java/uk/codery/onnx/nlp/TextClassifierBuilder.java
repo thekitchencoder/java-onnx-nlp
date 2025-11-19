@@ -94,6 +94,7 @@ public class TextClassifierBuilder {
         }
 
         // Load model
+        // TODO - modelPath and resourceName are properties of specific types of modelLoader
         ModelBundle modelBundle = modelPath != null
                 ? modelLoader.load(modelPath)
                 : modelLoader.loadFromResource(resourceName);

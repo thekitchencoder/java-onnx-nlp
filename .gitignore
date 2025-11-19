@@ -53,7 +53,7 @@ htmlcov/
 .dmypy.json
 dmypy.json
 
-# ONNX Models (large binary files)
+# ONNX Models - models in test/resources are synced with repo (small ~250K each)
 scripts/models/*
 
 # Training Data
