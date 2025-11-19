@@ -15,15 +15,18 @@ import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
+import uk.codery.onnx.nlp.api.CompositeTextClassifier;
 import uk.codery.onnx.nlp.api.TextClassifier;
 import uk.codery.onnx.nlp.api.TextPreprocessor;
 import uk.codery.onnx.nlp.TextClassifierBuilder;
+import uk.codery.onnx.nlp.impl.DefaultCompositeTextClassifier;
 import uk.codery.onnx.nlp.model.FileSystemModelLoader;
 import uk.codery.onnx.nlp.model.ModelLoader;
 import uk.codery.onnx.nlp.preprocessing.BasicTextPreprocessor;
 
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -115,6 +118,9 @@ public class NlpOnnxAutoConfiguration {
             OrtEnvironment ortEnvironment = beanFactory.getBean(OrtEnvironment.class);
             ModelLoader modelLoader = beanFactory.getBean(ModelLoader.class);
 
+            // Track all registered classifiers for composite
+            Map<String, TextClassifier> registeredClassifiers = new LinkedHashMap<>();
+
             for (Map.Entry<String, NlpOnnxProperties.ModelConfig> entry : properties.getModels().entrySet()) {
                 String name = entry.getKey();
                 NlpOnnxProperties.ModelConfig modelConfig = entry.getValue();
@@ -128,10 +134,22 @@ public class NlpOnnxAutoConfiguration {
                     TextClassifier classifier = createClassifier(name, modelConfig, ortEnvironment, modelLoader);
                     String beanName = name + "Classifier";
                     beanFactory.registerSingleton(beanName, classifier);
+                    registeredClassifiers.put(name, classifier);
                     log.info("Registered TextClassifier bean '{}' for model at: {}", beanName, modelConfig.getModelPath());
                 } catch (Exception e) {
                     throw new RuntimeException("Failed to create classifier for model: " + name, e);
                 }
+            }
+
+            // Register composite classifier if we have at least one classifier
+            if (!registeredClassifiers.isEmpty()) {
+                CompositeTextClassifier compositeClassifier = new DefaultCompositeTextClassifier(
+                        registeredClassifiers,
+                        false  // Don't own classifiers - Spring manages their lifecycle
+                );
+                beanFactory.registerSingleton("compositeClassifier", compositeClassifier);
+                log.info("Registered CompositeTextClassifier bean 'compositeClassifier' with {} classifiers: {}",
+                        registeredClassifiers.size(), registeredClassifiers.keySet());
             }
         }
 
