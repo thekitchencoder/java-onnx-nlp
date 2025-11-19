@@ -86,16 +86,23 @@ public class DefaultCompositeTextClassifier implements CompositeTextClassifier {
                         LinkedHashMap::new
                 ));
 
-        // Transpose results: from classifier -> list to list -> classifier map
+        return transposeResults(texts, allResults);
+    }
+
+    /**
+     * Transposes results from classifier-keyed map to text-indexed list.
+     */
+    private List<CompositeClassificationResult> transposeResults(
+            List<String> texts,
+            Map<String, List<ClassificationResult>> resultsByClassifier
+    ) {
         List<CompositeClassificationResult> compositeResults = new ArrayList<>(texts.size());
         for (int i = 0; i < texts.size(); i++) {
             String text = texts.get(i);
             Map<String, ClassificationResult> resultsForText = new LinkedHashMap<>();
 
-            for (Map.Entry<String, List<ClassificationResult>> entry : allResults.entrySet()) {
-                String classifierName = entry.getKey();
-                ClassificationResult result = entry.getValue().get(i);
-                resultsForText.put(classifierName, result);
+            for (Map.Entry<String, List<ClassificationResult>> entry : resultsByClassifier.entrySet()) {
+                resultsForText.put(entry.getKey(), entry.getValue().get(i));
             }
 
             compositeResults.add(CompositeClassificationResult.builder()
@@ -103,7 +110,6 @@ public class DefaultCompositeTextClassifier implements CompositeTextClassifier {
                     .results(resultsForText)
                     .build());
         }
-
         return compositeResults;
     }
 
