@@ -96,6 +96,16 @@ public class DefaultCompositeTextClassifier implements CompositeTextClassifier {
             List<String> texts,
             Map<String, List<ClassificationResult>> resultsByClassifier
     ) {
+        // Validate all classifiers returned the expected number of results
+        for (Map.Entry<String, List<ClassificationResult>> entry : resultsByClassifier.entrySet()) {
+            if (entry.getValue().size() != texts.size()) {
+                throw new IllegalStateException(String.format(
+                        "Classifier '%s' returned %d results but expected %d",
+                        entry.getKey(), entry.getValue().size(), texts.size()
+                ));
+            }
+        }
+
         List<CompositeClassificationResult> compositeResults = new ArrayList<>(texts.size());
         for (int i = 0; i < texts.size(); i++) {
             String text = texts.get(i);
