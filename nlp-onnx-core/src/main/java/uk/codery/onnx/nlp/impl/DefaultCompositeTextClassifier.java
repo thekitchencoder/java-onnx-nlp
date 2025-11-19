@@ -7,7 +7,6 @@ import uk.codery.onnx.nlp.api.CompositeClassificationResult;
 import uk.codery.onnx.nlp.api.CompositeTextClassifier;
 import uk.codery.onnx.nlp.api.TextClassifier;
 
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -26,6 +25,8 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 public class DefaultCompositeTextClassifier implements CompositeTextClassifier {
+
+    private record Tuple<T>(String key, T value) {}
 
     private final Map<String, TextClassifier> classifiers;
     private final boolean ownsClassifiers;
@@ -54,13 +55,10 @@ public class DefaultCompositeTextClassifier implements CompositeTextClassifier {
     public CompositeClassificationResult classify(@NonNull String text) {
         Map<String, ClassificationResult> results = classifiers.entrySet()
                 .parallelStream()
-                .map(entry -> new AbstractMap.SimpleEntry<>(
-                        entry.getKey(),
-                        entry.getValue().classify(text)
-                ))
+                .map(entry -> new Tuple<>(entry.getKey(), entry.getValue().classify(text)))
                 .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Map.Entry::getValue,
+                        Tuple::key,
+                        Tuple::value,
                         (a, b) -> a,
                         LinkedHashMap::new
                 ));
@@ -80,13 +78,10 @@ public class DefaultCompositeTextClassifier implements CompositeTextClassifier {
         // Run each classifier's batch in parallel
         Map<String, List<ClassificationResult>> allResults = classifiers.entrySet()
                 .parallelStream()
-                .map(entry -> new AbstractMap.SimpleEntry<>(
-                        entry.getKey(),
-                        entry.getValue().classifyBatch(texts)
-                ))
+                .map(entry -> new Tuple<>(entry.getKey(), entry.getValue().classifyBatch(texts)))
                 .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Map.Entry::getValue,
+                        Tuple::key,
+                        Tuple::value,
                         (a, b) -> a,
                         LinkedHashMap::new
                 ));
